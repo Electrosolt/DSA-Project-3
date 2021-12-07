@@ -1,5 +1,5 @@
 #include <iostream>
-#include <unordered_map>;
+#include <unordered_map>
 #include <unordered_set>
 #include <queue>
 #include <stack>
@@ -88,7 +88,7 @@ bool adjacencyListGraph::FindConnection(steamAccount target) {
         vector<steamAccount> children = graph[current];
 
         // Iterate through its children, look for the target
-        for (int i = 0; i < children.size(); i++) {
+        for (unsigned int i = 0; i < children.size(); i++) {
 
             // Return true if target is found
             if (children[i] == target) {
@@ -147,12 +147,12 @@ void adjacencyListGraph::printGraph() {
 
         // Take out the top of the queue and print its values
         steamAccount current = vertices.top();
-        cout << current.index << ") Name: " << current.name << " Number of friends: " << current.numFriends << endl;
+        cout << current.ID << ") Name: " << current.name << " Number of friends: " << current.numFriends << endl;
         vertices.pop();
         vector<steamAccount> children = graph[current];
 
         // Iterate through its children
-        for (int i = 0; i < children.size(); i++) {
+        for (unsigned int i = 0; i < children.size(); i++) {
 
             // Add any unvisited children to the queue and set
             if (visited.count(children[i]) == 0) {
@@ -201,28 +201,96 @@ adjacencyMatrixGraph::adjacencyMatrixGraph(steamAccount source) {
 // Returns whether or not a connection between the two accounts can be established after 3 degrees of separation
 bool adjacencyMatrixGraph::FindConnection(steamAccount target) {
 
+    // Perform a breadth-first search (BFS) on the entire graph
     unordered_set<int> visited;
+    queue<int> vertices;
 
+    // Insert the source
+    vertices.push(source.index);
+    visited.insert(source.index);
 
-    for (int i = 0; i < graph[0].size(); i++) {
+    // The graph is undirected and connected, so the source will work
+    while (!vertices.empty()) {
 
+        // Take out the top of the queue
+        int current = vertices.front();
+        vertices.pop();
+        vector<int> children = graph[current];
 
+        // Iterate through its children, look for the target
+        for (unsigned int i = 0; i < children.size(); i++) {
+
+            // Return true if target is found
+            if (indices[children[i]] == target) {
+
+                return true;
+
+            }
+
+            // Add any unvisited children to the queue and set
+            if (visited.count(children[i]) == 0) {
+
+                visited.insert(children[i]);
+                vertices.push(children[i]);
+
+            }
+
+        }
 
     }
+
+    // All friends up to 3 connections searched, connection not found
+    return false;
 
 }
 
 // Inserts an edge (a friendship connection, and possible vertex, an account) into the graph
 void adjacencyMatrixGraph::insertEdge(steamAccount from, steamAccount to) {
 
+    // 1 means that the connection exists, would be both ways
     graph[from.index][to.index] = 1;
+    graph[to.index][from.index] = 1;
+
+    // Map the index back to the steamAccount
+    indices[from.index] = from;
+    indices[to.index] = to;
 
 }
 
 // Prints all accounts in the graph, and their friends
 void adjacencyMatrixGraph::printGraph() {
 
+    // Perform a depth-first search (DFS) on the entire graph
+    unordered_set<int> visited;
+    stack<int> vertices;
 
+    // Insert the source
+    vertices.push(source.index);
+    visited.insert(source.index);
+
+    // The graph is undirected and connected, so the source will work
+    while (!vertices.empty()) {
+
+        // Take out the top of the queue and print its values
+        int current = vertices.top();
+        cout << indices[current].ID << ") Name: " << indices[current].name << " Number of friends: " << indices[current].numFriends << endl;
+        vertices.pop();
+        vector<int> children = graph[current];
+
+        // Iterate through its children, look for the target
+        for (unsigned int i = 0; i < children.size(); i++) {
+
+            // Add any unvisited children to the queue and set
+            if (visited.count(children[i]) == 0) {
+
+                visited.insert(children[i]);
+                vertices.push(children[i]);
+
+            }
+
+        }
+
+    }
 
 }
 
