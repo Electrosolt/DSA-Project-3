@@ -28,6 +28,10 @@ class SteamAccount:
 
         ids = []
         numIDs = 0
+
+        #print(f"Request Result: {req.json()}")
+        if len(req.json()) == 0:
+            return []
         for user in req.json()['friendslist']['friends']:
             numIDs += 1
             ids.append(user['steamid'])
@@ -123,17 +127,20 @@ class AdjMatrixGraph:
         return -1
     
     def insertEdge(self, source, target):
-        if len(self.graph) > max(source.index, target.index):
-            self.graph.extend([False] * max(source.index, target.index) - len(self.graph))
         
+        for i in range(target.index - len(self.graph)+ 1):
+            self.graph.append([])
 
-        if len(self.graph[source.index]) > target.index:
-            self.graph[source.index].extend([False] * target.index - len(self.graph[source.index]))
-        
+        if len(self.graph[source.index]) - 1 < target.index:
+            self.graph[source.index].extend([False] * (target.index - len(self.graph[source.index]) + 1))
+ 
+        #print(f"Adding Edge. Source Index: {source.index}, Target Index: {target.index}")
+
         self.graph[source.index][target.index] = True
+
         
-        if len(self.graph[target.index]) > source.index:
-            self.graph[target.index].extend([False] * source.index - len(self.graph[target.index]))
+        if len(self.graph[target.index]) - 1 < source.index:
+            self.graph[target.index].extend([False] * (target.index - len(self.graph[target.index]) + 1))
         
         self.graph[target.index][source.index] = True
 
@@ -157,6 +164,7 @@ adjacencyListGraph = AdjListGraph()
 adjacencyMatrixGraph = AdjMatrixGraph()
 
 def buildGraphs(sourceID):
+    sourceID = 76561197960435530
     source = SteamAccount(sourceID)
     queue = deque([source])
     visited = set()
@@ -170,13 +178,16 @@ def buildGraphs(sourceID):
         depth += 1
         for i in range(len(queue)):
             current = queue.popleft()
-            for friend in current.getFriendList():
+            print(f"Current: {current} with ID {current.ID}")
+            friendList = current.getFriendList()
+            #print(friendList)
+            for friend in friendList:
                 if friend not in visited:
-                    queue.append(friend)
-                    visited.add(friend)
                     friendAcc = SteamAccount(friend)
+                    queue.append(friendAcc)
+                    visited.add(friendAcc)
                     adjacencyListGraph.insertEdge(current, friendAcc)
-                    adjacecyMatrixGraph.insertEdge(current, friendAcc)
+                    adjacencyMatrixGraph.insertEdge(current, friendAcc)
 
 # UI
 # Create colors
