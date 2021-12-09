@@ -1,4 +1,4 @@
-import sys, pygame
+import pygame, sys
 from collections import deque
 from collections import defaultdict
 import requests
@@ -7,7 +7,6 @@ pygame.init()
 
 apiKey = "69769964D41B7AAA6C41B8C8D98538B2"
 
-# Steam account class
 class SteamAccount:
 
     maxIndex = 0
@@ -19,6 +18,9 @@ class SteamAccount:
 
     def __eq__(self, other):
         return self.ID == other.ID
+
+    def __hash__(self):
+        return hash((self.ID, self.index))
     
     # Returns a list of the steam IDs of the SteamAccount's friends
     def getFriendList(self):
@@ -54,14 +56,13 @@ class SteamAccount:
         print(f"Total Names: {numNames}")
         return names
 
-# Adjacency List Implementation
 class AdjListGraph:
 
-    def __init__(self, source):
+    def __init__(self, source = None):
         self.source = source
         self.graph = defaultdict(list)
 
-    # Returns the number of friend connections needed to get from the source to the searched account, and -1 if not possible in 3 connections
+        
     def findConnection(self, target, maxDegrees):
         queue = deque([self.source])
         visited = set((self.source))
@@ -79,28 +80,25 @@ class AdjListGraph:
                         visited.add(child)
         return -1
     
-    # Inserts an edge (a friendship connection, and possible vertex, an account) into the graph
-    def inserEdge(self, source, target):
+    def insertEdge(self, source, target):
         self.graph[source].append(target)
 
-    # Prints all accounts in the graph
     def printGraph(self):
         queue = deque([self.source])
         visited = set((self.source))
         
         while queue:
             current = queue.popleft()
-            print(f"ID: {current}")
+            print(f"ID: {current}, # of Friends: {current.numFriends}")
 
             for child in self.graph[current]:
                 if child not in visited:
                     visited.add(child)
                     queue.append(child)
 
-
 class AdjMatrixGraph:
 
-    def __init__(self, source):
+    def __init__(self, source = None):
         self.source = source
         self.graph = []
         self.indexToID = {}
@@ -139,8 +137,8 @@ class AdjMatrixGraph:
         
         self.graph[target.index][source.index] = True
 
-        self.indexToID[source.index] = source.id
-        self.indexToID[target.index] = target.id
+        self.indexToID[source.index] = source.ID
+        self.indexToID[target.index] = target.ID
 
     def printGraph(self):
         queue = deque([self.source])
@@ -148,12 +146,37 @@ class AdjMatrixGraph:
         
         while queue:
             current = queue.popleft()
-            print(f"ID: {self.indexToID[current]}")
+            print(f"ID: {self.indexToID[current]}, # of Friends: {self.indexToID[current].numFriends}")
 
             for index, exists in enumerate(self.graph[current]):
                 if index not in visited and exists:
                     visited.add(index)
-                    queue.append(index)
+                    queue.append(index)    
+
+adjacencyListGraph = AdjListGraph()
+adjacencyMatrixGraph = AdjMatrixGraph()
+
+def buildGraphs(sourceID):
+    source = SteamAccount(sourceID)
+    queue = deque([source])
+    visited = set()
+    visited.add(source)
+    depth = 0
+
+    adjacencyListGraph.source = sourceID
+    adjacencyMatrixGraph.source = sourceID
+
+    while queue and not depth > 3:
+        depth += 1
+        for i in range(len(queue)):
+            current = queue.popleft()
+            for friend in current.getFriendList():
+                if friend not in visited:
+                    queue.append(friend)
+                    visited.add(friend)
+                    friendAcc = SteamAccount(friend)
+                    adjacencyListGraph.insertEdge(current, friendAcc)
+                    adjacecyMatrixGraph.insertEdge(current, friendAcc)
 
 # UI
 # Create colors
@@ -204,12 +227,13 @@ title = title_font.render('Six Degrees of Steam Separation', True, white)
 # Search for connection when enter is pressed or search button is clicked
 def Search(source, search):
 
-    print('Source: ', source)
-    print('Target: ', search)
+    print(adjacencyListGraph.findConnection(search, 3))
+    adjacencyMatrixGraph.findConnection(search, 3)
 
 def CreateGraph(source):
 
-    graphSource = SteamAccount()
+    buildGraphs(source)
+    
 
 # Program loop
 while running:
