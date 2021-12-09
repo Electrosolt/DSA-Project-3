@@ -4,15 +4,14 @@ import requests
 
 apiKey = "69769964D41B7AAA6C41B8C8D98538B2"
 
+
 class SteamAccount:
 
     maxIndex = 0
 
-    def __init__(self, ID, name, numFriends):
+    def __init__(self, ID):
         self.ID = ID
-        self.name = name
-        self.numFriends = numFriends
-        self.index = maxIndex
+        self.index = SteamAccount.maxIndex
         SteamAccount.maxIndex += 1
 
     def __eq__(self, other):
@@ -59,7 +58,6 @@ class AdjListGraph:
         self.graph = defaultdict(list)
 
         
-    
     def findConnection(self, target, maxDegrees):
         queue = deque([self.source])
         visited = set((self.source))
@@ -77,7 +75,7 @@ class AdjListGraph:
                         visited.add(child)
         return -1
     
-    def inserEdge(self, source, target):
+    def insertEdge(self, source, target):
         self.graph[source].append(target)
 
     def printGraph(self):
@@ -152,14 +150,23 @@ class AdjMatrixGraph:
                     queue.append(index)    
 
 
+def buildGraphs(source):
+    queue = deque([source])
+    visited = set((source))
+    depth = 0
 
+    adjListFriends = AdjListGraph(source)
+    adjMatrixFriends = AdjMatrixGraph(source)
 
-
-
-
-
-
-
-
-
+    while queue and not depth > 3:
+        depth += 1
+        for i in range(len(queue)):
+            current = queue.popleft()
+            for friend in current.getFriendList():
+                if friend not in visited:
+                    queue.append(friend)
+                    visited.add(friend)
+                    friendAcc = SteamAccount(friend)
+                    adjListFriends.insertEdge(current, friendAcc)
+                    adjMatrixFriends.insertEdge(current, friendAcc)
 
