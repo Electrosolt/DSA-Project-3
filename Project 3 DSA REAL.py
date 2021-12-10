@@ -8,6 +8,7 @@ pygame.init()
 
 apiKey = "69769964D41B7AAA6C41B8C8D98538B2"
 
+# Class representing a steam account with a given ID and index for matrix graph.
 class SteamAccount:
 
     maxIndex = 0
@@ -36,7 +37,7 @@ class SteamAccount:
         for user in req.json()['friendslist']['friends']:
             numIDs += 1
             ids.append(user['steamid'])
-        print(f"Total IDs: {numIDs}")
+        #print(f"Total IDs: {numIDs}")
         return ids
     
     # Returns a list of usernames corresponding to the input steam ID list. Static Function.
@@ -50,7 +51,7 @@ class SteamAccount:
         names = []
         numNames = 0
         for steamIDList in blocks:
-            print(f"Block Length: {len(steamIDList)}")
+            #print(f"Block Length: {len(steamIDList)}")
             steamIDstr = ",".join(steamIDList)
             req = requests.get(f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={apiKey}&steamids={steamIDstr}")
 
@@ -58,19 +59,20 @@ class SteamAccount:
                 numNames += 1
                 names.append(user['personaname'])
 
-        print(f"Total Names: {numNames}")
+        #print(f"Total Names: {numNames}")
         return names
     
     def __repr__(self):
         return "<SteamAccount [ID = " + self.ID + "]>"
 
+# Graph respresentation using adjacency lists
 class AdjListGraph:
 
     def __init__(self, source = None):
         self.source = source
         self.graph = defaultdict(list)
 
-        
+    # Find the length between a target and the graph's source. Returns -1 if not found.
     def findConnection(self, target, maxDegrees):
         targetID = target.ID
         queue = deque([self.source])
@@ -82,9 +84,9 @@ class AdjListGraph:
             pathLength += 1
             for i in range(len(queue)):
                 current = queue.popleft()
-                print(f"Checking Current: {current} with children {self.graph[current]}")
+                #print(f"Checking Current: {current} with children {self.graph[current]}")
                 for child in self.graph[current]:
-                    print(f"Checking {child} == 76561198203496970")
+                    #print(f"Checking {child} == 76561198203496970")
                     if child == targetID:
                         return pathLength
                     elif child not in visited:
@@ -92,9 +94,11 @@ class AdjListGraph:
                         visited.add(child)
         return -1
     
+    # Inserts an edge based on a source and target
     def insertEdge(self, source, target):
         self.graph[source].append(target)
 
+    # Prints the graph in level order
     def printGraph(self):
         queue = deque([self.source])
         visited = set()
@@ -102,16 +106,19 @@ class AdjListGraph:
         
         while queue:
             current = queue.popleft()
-            print(f"ID: {current}, # of Friends: {current.numFriends}")
+            print(f"ID: {current}")
 
             for child in self.graph[current]:
                 if child not in visited:
                     visited.add(child)
                     queue.append(child)
+                    
+    # Clears the graph for reusability purposes
     def clear(self):
         self.source = None
-        self.graph = defaultdict(list
-                                 )
+        self.graph = defaultdict(list)
+
+# Graph respresentation using an adjacency matrix
 class AdjMatrixGraph:
 
     def __init__(self, source = None):
@@ -120,6 +127,7 @@ class AdjMatrixGraph:
         self.indexToID = {}
         self.IDtoIndex = {}
 
+    # Find the length between a target and the graph's source. Returns -1 if not found.
     def findConnection(self, target, maxDegrees):
         targetID = target.ID
         queue = deque([0])
@@ -148,11 +156,8 @@ class AdjMatrixGraph:
 
         if len(self.graph[source.index]) - 1 < target.index:
             self.graph[source.index].extend([False] * (target.index - len(self.graph[source.index]) + 1))
- 
-        #print(f"Adding Edge. Source Index: {source.index}, Target Index: {target.index}")
 
         self.graph[source.index][target.index] = True
-
         
         if len(self.graph[target.index]) - 1 < source.index:
             self.graph[target.index].extend([False] * (target.index - len(self.graph[target.index]) + 1))
@@ -164,28 +169,33 @@ class AdjMatrixGraph:
         self.IDtoIndex[source.ID] = source.index
         self.IDtoIndex[target.ID] = target.index
 
+    # Prints the graph in level order
     def printGraph(self):
-        queue = deque([self.source])
+        queue = deque([0])
         visited = set()
-        visited.add(self.source)
+        visited.add(0)
         
         while queue:
             current = queue.popleft()
-            print(f"ID: {self.indexToID[current]}, # of Friends: {self.indexToID[current].numFriends}")
+            print(f"ID: {self.indexToID[current]} at index {current}")
 
             for index, exists in enumerate(self.graph[current]):
                 if index not in visited and exists:
                     visited.add(index)
                     queue.append(index)
+
+    # Clears the graph for reusability purposes
     def clear(self):
         self.source = None
         self.graph = []
         self.indexToID = {}
         self.IDtoIndex = {}
 
+# Declare global variables for reusability and ability to pass between functions
 adjacencyListGraph = AdjListGraph()
 adjacencyMatrixGraph = AdjMatrixGraph()
 
+# Builds the graphs for both graph variables based on a breadth-first search around a source vertex
 def buildGraphs(sourceID):
     sourceID = "76561198126320911"
     source = SteamAccount(sourceID)
@@ -204,7 +214,7 @@ def buildGraphs(sourceID):
     while queue and depth <= maxDepth:
         for i in range(len(queue)):
             current = queue.popleft()
-            print(f"Current: {current} with Depth {depth}")
+            #print(f"Current: {current} with Depth {depth}")
             friendList = current.getFriendList()
             for friend in friendList:
                 if friend not in visited:
@@ -265,20 +275,11 @@ title = title_font.render('Six Degrees of Steam Separation', True, white)
 
 # Search for connection when enter is pressed or search button is clicked
 def Search(source, searchID):
-    searchID = "76561198183039707"
+    #searchID = "76561198183039707"
     print(f"Searching for {searchID}")
     search = SteamAccount(searchID)
 
     print("Searching.")
-    #print("Adjacency Matrix Raw Print:")
-    #print(adjacencyMatrixGraph.graph)
-    #print("Adjacency List Raw Print:")
-    #print(adjacencyListGraph.graph)
-    #for k in adjacencyListGraph.graph:
-    #    print(f"{k}'s Friends:")
-    #    for v in adjacencyListGraph.graph[k]:
-    #        print(v)
-    #    print("\n\n\n\n")
     print("--------")
     adjListDistance = adjacencyListGraph.findConnection(search, 3)
     adjMatrixDistance = adjacencyMatrixGraph.findConnection(search, 3)
@@ -293,31 +294,14 @@ def Search(source, searchID):
 
     print("--------")
 
-    #if adjMatrixDistance != -1:
-    #    connectionVertices = []
-    #    vertex = search.ID
-    #    while vertex != adjacencyMatrixGraph.indexToID[0]:
-    #        print(f"Vertex: {vertex}, Finding {adjacencyMatrixGraph.indexToID[0]}")
-    #        connectionVertices.append(vertex)
-    #        print(f"Connection Vertices: {connectionVertices}")
-    #        vertexConnections = adjacencyMatrixGraph.graph[adjacencyMatrixGraph.IDtoIndex[vertex]]
-    #        for index, exists in enumerate(vertexConnections):
-    #            print(f"Checking Whether {exists} at {index} of {vertexConnections}")
-    #            if exists:
-    #                print(f"Exists!")
-    #                vertex = adjacencyMatrixGraph.indexToID[index]
-    #                break
-    #    connectionVertices.append(adjacencyMatrixGraph.source)
-    #    connectionVertices.reverse()
-    #    print("Connection Path:")
-    #    for i in connectionVertices:
-    #        print(i)
+# Prints both graphs
+def printGraphs():
+    print("Adjacency List:")
+    adjacencyListGraph.printGraph()
+    print("\n\nAdjacency Matrix:")
+    adjacencyMatrixGraph.printGraph()
 
 
-def CreateGraph(source):
-
-    buildGraphs(source)
-    
 
 # Program loop
 while running:
@@ -379,6 +363,9 @@ while running:
                 searchActive = False
                 searchColor = passiveColor
 
+                if graphCreated:
+                    printGraphs()
+
             # ...on the create button
             elif createBox.collidepoint(event.pos):
 
@@ -387,7 +374,7 @@ while running:
                 sourceColor = passiveColor
                 searchActive = False
                 searchColor = passiveColor
-                CreateGraph(user_text)
+                buildGraphs(user_text)
                 graphCreated = True
 
             # ...on anything else
