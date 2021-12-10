@@ -31,7 +31,7 @@ class SteamAccount:
         numIDs = 0
 
         #print(f"Request Result: {req.json()}")
-        if len(req.json()) == 0:
+        if req.status_code == 500 or len(req.json()) == 0:
             return []
         for user in req.json()['friendslist']['friends']:
             numIDs += 1
@@ -60,6 +60,9 @@ class SteamAccount:
 
         print(f"Total Names: {numNames}")
         return names
+    
+    def __repr__(self):
+        return "<SteamAccount [ID = " + self.ID + "]>"
 
 class AdjListGraph:
 
@@ -69,6 +72,7 @@ class AdjListGraph:
 
         
     def findConnection(self, target, maxDegrees):
+        targetID = target.ID
         queue = deque([self.source])
         visited = set()
         visited.add(self.source)
@@ -78,8 +82,10 @@ class AdjListGraph:
             pathLength += 1
             for i in range(len(queue)):
                 current = queue.popleft()
+                print(f"Checking Current: {current} with children {self.graph[current]}")
                 for child in self.graph[current]:
-                    if child == target:
+                    print(f"Checking {child} == 76561198203496970")
+                    if child == targetID:
                         return pathLength
                     elif child not in visited:
                         queue.append(child)
@@ -102,18 +108,23 @@ class AdjListGraph:
                 if child not in visited:
                     visited.add(child)
                     queue.append(child)
-
+    def clear(self):
+        self.source = None
+        self.graph = defaultdict(list
+                                 )
 class AdjMatrixGraph:
 
     def __init__(self, source = None):
         self.source = source
         self.graph = []
         self.indexToID = {}
+        self.IDtoIndex = {}
 
     def findConnection(self, target, maxDegrees):
-        queue = deque([self.source.index])
+        targetID = target.ID
+        queue = deque([0])
         visited = set()
-        visited.add(self.source.index)
+        visited.add(0)
         pathLength = 0 # Length of path from source to target, if found.
 
         while queue and not pathLength > maxDegrees:
@@ -123,7 +134,7 @@ class AdjMatrixGraph:
                 for index, exists in enumerate(self.graph[current]):
                     if not exists:
                         continue
-                    if self.indexToID[index] == target:
+                    if self.indexToID[index] == targetID:
                         return pathLength
                     elif index not in visited:
                         queue.append(index)
@@ -150,6 +161,8 @@ class AdjMatrixGraph:
 
         self.indexToID[source.index] = source.ID
         self.indexToID[target.index] = target.ID
+        self.IDtoIndex[source.ID] = source.index
+        self.IDtoIndex[target.ID] = target.index
 
     def printGraph(self):
         queue = deque([self.source])
@@ -163,38 +176,46 @@ class AdjMatrixGraph:
             for index, exists in enumerate(self.graph[current]):
                 if index not in visited and exists:
                     visited.add(index)
-                    queue.append(index)    
+                    queue.append(index)
+    def clear(self):
+        self.source = None
+        self.graph = []
+        self.indexToID = {}
+        self.IDtoIndex = {}
 
 adjacencyListGraph = AdjListGraph()
 adjacencyMatrixGraph = AdjMatrixGraph()
 
 def buildGraphs(sourceID):
-    sourceID = 76561198126320911
+    sourceID = "76561198126320911"
     source = SteamAccount(sourceID)
     queue = deque([source])
     visited = set()
     visited.add(source)
     depth = 0
     maxDepth = 2
-
+    
+    adjacencyListGraph.clear()
+    adjacencyMatrixGraph.clear()
     adjacencyListGraph.source = sourceID
     adjacencyMatrixGraph.source = sourceID
+    adjacencyMatrixGraph.indexToID = {0: sourceID}
 
     while queue and depth <= maxDepth:
         for i in range(len(queue)):
             current = queue.popleft()
-            print(f"Current: {current} with ID {current.ID} and Depth {depth}")
+            print(f"Current: {current} with Depth {depth}")
             friendList = current.getFriendList()
-            #print(friendList)
             for friend in friendList:
                 if friend not in visited:
                     friendAcc = SteamAccount(friend)
                     visited.add(friendAcc)
-                    adjacencyListGraph.insertEdge(current, friendAcc)
+                    adjacencyListGraph.insertEdge(current.ID, friend)
                     adjacencyMatrixGraph.insertEdge(current, friendAcc)
                     if depth < maxDepth:
                         queue.append(friendAcc)
         depth += 1
+    print("Done Building")
 
 # UI
 # Create colors
@@ -243,10 +264,55 @@ createText = base_font.render('Create graph with source', True, white)
 title = title_font.render('Six Degrees of Steam Separation', True, white) 
 
 # Search for connection when enter is pressed or search button is clicked
-def Search(source, search):
+def Search(source, searchID):
+    searchID = "76561198183039707"
+    print(f"Searching for {searchID}")
+    search = SteamAccount(searchID)
 
-    print(adjacencyListGraph.findConnection(search, 3))
-    adjacencyMatrixGraph.findConnection(search, 3)
+    print("Searching.")
+    #print("Adjacency Matrix Raw Print:")
+    #print(adjacencyMatrixGraph.graph)
+    #print("Adjacency List Raw Print:")
+    #print(adjacencyListGraph.graph)
+    #for k in adjacencyListGraph.graph:
+    #    print(f"{k}'s Friends:")
+    #    for v in adjacencyListGraph.graph[k]:
+    #        print(v)
+    #    print("\n\n\n\n")
+    print("--------")
+    adjListDistance = adjacencyListGraph.findConnection(search, 3)
+    adjMatrixDistance = adjacencyMatrixGraph.findConnection(search, 3)
+    if adjListDistance == -1:
+        print("No Connection Found via Adjacency List Method")
+    else:
+        print(f"Connection via Adjacency List found at a depth of {adjListDistance}")
+    if adjMatrixDistance == -1:
+        print("No Connection Found via Adjacency Matrix Method")
+    else:
+        print(f"Connection via Adjacency Matrix found at a depth of {adjMatrixDistance}")
+
+    print("--------")
+
+    #if adjMatrixDistance != -1:
+    #    connectionVertices = []
+    #    vertex = search.ID
+    #    while vertex != adjacencyMatrixGraph.indexToID[0]:
+    #        print(f"Vertex: {vertex}, Finding {adjacencyMatrixGraph.indexToID[0]}")
+    #        connectionVertices.append(vertex)
+    #        print(f"Connection Vertices: {connectionVertices}")
+    #        vertexConnections = adjacencyMatrixGraph.graph[adjacencyMatrixGraph.IDtoIndex[vertex]]
+    #        for index, exists in enumerate(vertexConnections):
+    #            print(f"Checking Whether {exists} at {index} of {vertexConnections}")
+    #            if exists:
+    #                print(f"Exists!")
+    #                vertex = adjacencyMatrixGraph.indexToID[index]
+    #                break
+    #    connectionVertices.append(adjacencyMatrixGraph.source)
+    #    connectionVertices.reverse()
+    #    print("Connection Path:")
+    #    for i in connectionVertices:
+    #        print(i)
+
 
 def CreateGraph(source):
 
@@ -402,10 +468,11 @@ while running:
             # If enter is hit
             elif event.key == pygame.K_RETURN:
 
-                # Reset text boxes and search for connection
-                Search(user_text, search_text)
-                user_text = ''
-                search_text = ''
+                if graphCreated:
+                    # Reset text boxes and search for connection
+                    Search(user_text, search_text)
+                    user_text = ''
+                    search_text = ''
 
             # If any other character, up to max length, is hit
             elif len(search_text) < 64:
