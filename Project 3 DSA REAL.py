@@ -70,7 +70,8 @@ class AdjListGraph:
         
     def findConnection(self, target, maxDegrees):
         queue = deque([self.source])
-        visited = set((self.source))
+        visited = set()
+        visited.add(self.source)
         pathLength = 0 # Length of path from source to target, if found.
 
         while queue and not pathLength > maxDegrees:
@@ -90,7 +91,8 @@ class AdjListGraph:
 
     def printGraph(self):
         queue = deque([self.source])
-        visited = set((self.source))
+        visited = set()
+        visited.add(self.source)
         
         while queue:
             current = queue.popleft()
@@ -110,7 +112,8 @@ class AdjMatrixGraph:
 
     def findConnection(self, target, maxDegrees):
         queue = deque([self.source.index])
-        visited = set((self.source.index))
+        visited = set()
+        visited.add(self.source.index)
         pathLength = 0 # Length of path from source to target, if found.
 
         while queue and not pathLength > maxDegrees:
@@ -150,7 +153,8 @@ class AdjMatrixGraph:
 
     def printGraph(self):
         queue = deque([self.source])
-        visited = set((self.source))
+        visited = set()
+        visited.add(self.source)
         
         while queue:
             current = queue.popleft()
@@ -353,10 +357,11 @@ while running:
             # If enter is hit
             elif event.key == pygame.K_RETURN:
 
-                # Reset text boxes and search for connection
-                Search(user_text, search_text)
-                user_text = ''
-                search_text = ''
+                if graphCreated:
+                    # Reset text boxes and search for connection
+                    Search(user_text, search_text)
+                    user_text = ''
+                    search_text = ''
 
             # If any other character, up to max length, is hit
             elif len(user_text) < 64:
