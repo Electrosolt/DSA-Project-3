@@ -115,7 +115,7 @@ class AdjListGraph:
     # Clears the graph for reusability purposes
     def clear(self):
         self.source = None
-        self.graph = defaultdict(list)
+        self.graph.clear()
 
 # Graph respresentation using an adjacency matrix
 class AdjMatrixGraph:
@@ -186,9 +186,9 @@ class AdjMatrixGraph:
     # Clears the graph for reusability purposes
     def clear(self):
         self.source = None
-        self.graph = []
-        self.indexToID = {}
-        self.IDtoIndex = {}
+        self.graph.clear()
+        self.indexToID.clear()
+        self.IDtoIndex.clear()
 
 # Declare global variables for reusability and ability to pass between functions
 adjacencyListGraph = AdjListGraph()
@@ -197,6 +197,7 @@ adjacencyMatrixGraph = AdjMatrixGraph()
 # Builds the graphs for both graph variables based on a breadth-first search around a source vertex
 def buildGraphs(sourceID):
     sourceID = "76561198126320911"
+    SteamAccount.maxIndex = 0
     source = SteamAccount(sourceID)
     queue = deque([source])
     visited = set()
@@ -209,7 +210,7 @@ def buildGraphs(sourceID):
     adjacencyListGraph.source = sourceID
     adjacencyMatrixGraph.source = sourceID
     adjacencyMatrixGraph.indexToID = {0: sourceID}
-
+    print(f"Building the Graphs starting at ID {sourceID}. Please wait a moment.")
     while queue and depth <= maxDepth:
         for i in range(len(queue)):
             current = queue.popleft()
@@ -224,7 +225,7 @@ def buildGraphs(sourceID):
                     if depth < maxDepth:
                         queue.append(friendAcc)
         depth += 1
-    print("Done Building")
+    print("Done Building.")
 
 # UI
 # Create colors
@@ -350,7 +351,7 @@ while running:
                 if graphCreated:
 
                     connectionsNeeded = Search(user_text, search_text)
-                    user_text = ''
+                    #user_text = ''
                     search_text = ''
                     haveTried = True
 
