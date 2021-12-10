@@ -1,3 +1,4 @@
+
 import pygame, sys
 from collections import deque
 from collections import defaultdict
@@ -164,30 +165,32 @@ adjacencyListGraph = AdjListGraph()
 adjacencyMatrixGraph = AdjMatrixGraph()
 
 def buildGraphs(sourceID):
-    sourceID = 76561197960435530
+    sourceID = 76561198126320911
     source = SteamAccount(sourceID)
     queue = deque([source])
     visited = set()
     visited.add(source)
     depth = 0
+    maxDepth = 2
 
     adjacencyListGraph.source = sourceID
     adjacencyMatrixGraph.source = sourceID
 
-    while queue and not depth > 3:
-        depth += 1
+    while queue and depth <= maxDepth:
         for i in range(len(queue)):
             current = queue.popleft()
-            print(f"Current: {current} with ID {current.ID}")
+            print(f"Current: {current} with ID {current.ID} and Depth {depth}")
             friendList = current.getFriendList()
             #print(friendList)
             for friend in friendList:
                 if friend not in visited:
                     friendAcc = SteamAccount(friend)
-                    queue.append(friendAcc)
                     visited.add(friendAcc)
                     adjacencyListGraph.insertEdge(current, friendAcc)
                     adjacencyMatrixGraph.insertEdge(current, friendAcc)
+                    if depth < maxDepth:
+                        queue.append(friendAcc)
+        depth += 1
 
 # UI
 # Create colors
